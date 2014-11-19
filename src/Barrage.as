@@ -28,7 +28,7 @@ package
 				ExternalInterface.addCallback('dispatchMsg',dispatchMsg);
 			}
 			
-			//setInterval(testInterval,100);
+			setInterval(testInterval,100);
 		}
 			
 		private function testInterval():void
