@@ -38,7 +38,7 @@
 			this.addEventListener(Event.ADDED_TO_STAGE,addStageHandler);
 			
 			//抛消息的，管多少
-			//setInterval(testInterval,1000);
+//			setInterval(testInterval,1000);
 			
 			//配置图标库URl
 			this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
