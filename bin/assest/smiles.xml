@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="公共表情">
     <SubTexture name="[微笑]" id="smile"  />
 	<SubTexture name="[撇嘴]" id="curl_one"  />
@@ -85,7 +85,7 @@
 	<SubTexture name="[胜利]" id="victory"  />
 	<SubTexture name="[抱拳]" id="bao_quan"  />
 	<SubTexture name="[勾引]" id="seduce"  />
-    <SubTexture name="[拳头]" id="fist"  />
+    	<SubTexture name="[拳头]" id="fist"  />
 	<SubTexture name="[差劲]" id="poorly"  />
 	<SubTexture name="[爱你]" id="love_you"  />
 	<SubTexture name="[NO]" id="no"  />
@@ -105,4 +105,10 @@
 	<SubTexture name="[献吻]" id="kisses_to"  />
 	<SubTexture name="[左太极]" id="left_taiji"  />
 	<SubTexture name="[右太极]" id="right_taiji"  />
+	<SubTexture name="{感动流泪}" id="Tears_realise"  />
+	<SubTexture name="{笑死我了}" id="Smile_realse" />
+	<SubTexture name="{吓死我了}" id="scare_realise" />
+	<SubTexture name="{献花献花}" id="Rose_realse" />
+	<SubTexture name="{扔鸡蛋}" id="throw_egg_realise" />
+	<SubTexture name="{困死了}" id="sleepy_realise" />
 </TextureAtlas>
