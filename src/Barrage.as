@@ -117,6 +117,9 @@
 			}
 		}
 		
+		/**
+		 *	显示图文混排 
+		 */
 		private function dispatchMsg(msg):void
 		{
 			l('MSG:',msg);
@@ -168,6 +171,9 @@
 			}
 		}
 		
+		/**
+		 *	根据舞台摆位置 
+		 */
 		protected function msgShow2Stage(event:ResizeEvent):void
 		{
 			var msgContainer:Group = event.target as Group;
@@ -268,9 +274,6 @@
 			}
 		}
 		
-		/**
-		 *	显示图文混排 
-		 */
 		protected function addStageHandler(event:Event):void
 		{  
 			//CallBack
