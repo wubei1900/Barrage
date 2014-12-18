@@ -106,9 +106,9 @@
 	<SubTexture name="[左太极]" id="left_taiji"  />
 	<SubTexture name="[右太极]" id="right_taiji"  />
 	<SubTexture name="{感动流泪}" id="Tears_realise"  />
-	<SubTexture name="{笑死我了}" id="Smile_realse" />
-	<SubTexture name="{吓死我了}" id="scare_realise" />
-	<SubTexture name="{献花献花}" id="Rose_realse" />
-	<SubTexture name="{扔鸡蛋}" id="throw_egg_realise" />
-	<SubTexture name="{困死了}" id="sleepy_realise" />
+	<SubTexture name="{笑死我了}" id="Smile_realse"  />
+	<SubTexture name="{吓死我了}" id="scare_realise"  />
+	<SubTexture name="{献花献花}" id="Rose_realse"  />
+	<SubTexture name="{扔鸡蛋}" id="throw_egg_realise"  />
+	<SubTexture name="{困死了}" id="sleepy_realise"  />
 </TextureAtlas>
