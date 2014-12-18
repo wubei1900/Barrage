@@ -3,6 +3,7 @@
 	import com.greensock.TweenLite;
 	import com.greensock.easing.Linear;
 	
+	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.external.ExternalInterface;
 	import flash.net.URLLoader;
@@ -16,7 +17,9 @@
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.Label;
 	import org.flexlite.domUI.components.UIAsset;
+	import org.flexlite.domUI.components.UIMovieClip;
 	import org.flexlite.domUI.core.Theme;
+	import org.flexlite.domUI.core.UIComponent;
 	import org.flexlite.domUI.effects.Resize;
 	import org.flexlite.domUI.events.ResizeEvent;
 	import org.flexlite.domUI.layouts.HorizontalLayout;
@@ -35,13 +38,31 @@
 		{
 			Injector.mapClass(Theme,VectorTheme);
 			
-			this.addEventListener(Event.ADDED_TO_STAGE,addStageHandler);
+			
+			/*
+			var swf:UIAsset = new UIAsset();
+			swf.skinName = "http://58.215.50.188/micromessager/swf/Rose_realse.swf";
+			addElement(swf);
+			*/
+			
+			/*
+			var loader:Loader = new Loader();
+			loader.load(new URLRequest('http://58.215.50.188/micromessager/swf/Rose_realse.swf'));
+			
+			var swf:UIComponent = new UIComponent()
+			swf.addChild(loader);
+			
+			addElement(swf);
+			
+			*/
+			
+			//this.addEventListener(Event.ADDED_TO_STAGE,addStageHandler);
 			
 			//抛消息的，管多少
 			//setInterval(testInterval,1000);
 			
 			//配置图标库URl
-			this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
+			//this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
 		}
 			
 		private function testInterval():void
