@@ -3,34 +3,31 @@
 	import com.greensock.TweenLite;
 	import com.greensock.easing.Linear;
 	
-	import flash.display.DisplayObject;
-	import flash.display.Loader;
-	import flash.display.LoaderInfo;
-	import flash.display.MovieClip;
 	import flash.events.Event;
-	import flash.events.IOErrorEvent;
 	import flash.external.ExternalInterface;
+	import flash.filters.GlowFilter;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.utils.clearInterval;
 	import flash.utils.setInterval;
 	
 	import mx.events.FlexEvent;
 	
+	import Component.EmoteContainer;
+	import Component.MsgContainer;
+	
 	import org.flexlite.domCore.Injector;
 	import org.flexlite.domUI.components.Alert;
+	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.Group;
-	import org.flexlite.domUI.components.Label;
-	import org.flexlite.domUI.components.UIAsset;
-	import org.flexlite.domUI.components.UIMovieClip;
 	import org.flexlite.domUI.core.Theme;
-	import org.flexlite.domUI.core.UIComponent;
 	import org.flexlite.domUI.effects.Resize;
 	import org.flexlite.domUI.events.ResizeEvent;
 	import org.flexlite.domUI.events.UIEvent;
-	import org.flexlite.domUI.layouts.HorizontalLayout;
 	import org.flexlite.domUI.managers.SystemManager;
 	import org.flexlite.domUI.skins.themes.VectorTheme;
 	
+	[SWF(backgroundColor="#000000")]
 	public class Barrage extends SystemManager
 	{
 		private var ud:URLLoader;
@@ -40,39 +37,89 @@
 		private  var arrId:Array;
 		private  var strUrl:String;
 		
-		private var groupList:Vector.<Group>;//图文混排列表
-		private var emoteList:Vector.<UIAsset>;//魔法表情容器列表
+		private var groupList:Vector.<MsgContainer>;//图文混排列表
+		private var emoteList:Vector.<EmoteContainer>;//魔法表情容器列表
+	
+		private var testSpeed:Array = [1, 2, 3];
+		private var testMove:Array = [1, 2, 3];
 		public function Barrage()
 		{
 			Injector.mapClass(Theme,VectorTheme);
 			
-			
-			/*
-			var swf:UIAsset = new UIAsset();
-			swf.skinName = "http://58.215.50.188/micromessager/swf/Rose_realse.swf";
-			addElement(swf);
-			*/
-			
-			/*
-			var loader:Loader = new Loader();
-			loader.load(new URLRequest('http://58.215.50.188/micromessager/swf/Rose_realse.swf'));
-			
-			var swf:UIComponent = new UIComponent()
-			swf.addChild(loader);
-			
-			addElement(swf);
-			
-			*/
-			
-			//this.addEventListener(Event.ADDED_TO_STAGE,addStageHandler);
-			
+			this.addEventListener(Event.ADDED_TO_STAGE,addStageHandler);
+			this.addEventListener(ResizeEvent.RESIZE, stageResize);
 			//抛消息的，管多少
-			setInterval(testInterval,1000);
+			testWork = false;
+			
+			//测试开关按钮
+			testOpenAndClose();
 			
 			//配置图标库URl
 			//this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
 		}
+		
+		private var workTime:uint;
+		private function set testWork(value:Boolean):void
+		{
+			if(value)
+				workTime = setInterval(testInterval,1000);
+			else
+				clearInterval(workTime);
+		}
 			
+		private function stageResize(e:ResizeEvent):void
+		{
+			if(left == null || right == null)return;
+			
+			if(this.width > left.width)
+				left.x = this.width-left.width;
+			else
+				left.x = 0;
+			
+			if(this.width > right.width)
+				right.x = this.width-right.width;
+			else
+				right.x = 0;
+		}
+		
+		private var left:Button;
+		private var right:Button;
+		private function testOpenAndClose():void
+		{
+			left = new Button();
+			left.label = "关闭";
+			this.addElement(left);
+			
+			right = new Button();
+			right.label = "开始";
+			right.name = "right";
+			this.addElement(right);
+			
+			left.addEventListener(UIEvent.BUTTON_DOWN, downHandler);
+			right.addEventListener(UIEvent.BUTTON_DOWN, downHandler);
+		}
+		
+		private function downHandler(e:UIEvent):void
+		{
+			if(e.target == left)
+			{
+				Visible = true;
+				testWork = false;
+				dispatchMsgControl({open:false})
+			}
+			else
+			{
+				Visible = false;
+				testWork = true;
+				dispatchMsgControl({open:true});
+			}
+		}
+		
+		private function set Visible(value:Boolean):void
+		{
+			left.visible = !(right.visible = value);
+		}
+		
 		private function testInterval():void
 		{
 			/*
@@ -87,17 +134,6 @@
 			
 			dispatchMsg({"tm":"1417169321307","nickname":"游客","id":24,"headimg":"","style":{"color":"59bb51","fontsize":"large","animation":"waves","flyspeed":"general"},"gid":null,"cid":"Test1","cnt":"来咯"});
 		}
-		
-		private var defaultStyle:Object = {
-			fontsize:{
-				small: 14,
-				medium: 24,
-				large:32,
-				llarge:42
-			},
-			fontfamily:'黑体',
-			color:'BBBBBB'
-		};
 		
 		/**
 		 *	是否显示表情 
@@ -114,32 +150,50 @@
 			{
 				if(groupList != null)
 				{
-					for each(var msgGroup:Group in groupList)
+					for each(var msgContainer:MsgContainer in groupList)
 					{
-						msgGroup.parent && Group(msgGroup.parent).removeElement(msgGroup);
+						msgContainer.destory();
+						msgContainer.parent && Group(msgContainer.parent).removeElement(msgContainer);
 					}
-					
 					groupList.length = 0;
 				}
 				
 				if(emoteList != null)
 				{
-					for each(var emote:UIAsset in emoteList)
+					for each(var emote:EmoteContainer in emoteList)
 					{
-						var emoteMC:MovieClip = emote.skin as MovieClip;
-						emoteMC.stop();
-						this.removeElement(emote);
+						emote.destory();
 					}
-					
 					emoteList.length = 0;
 				}
 			}
 		}
 		
+		private function clearMsgContainer(msgContainer:MsgContainer):void
+		{
+			for each(var msg:MsgContainer in groupList)
+			{
+				if(msg == msgContainer)
+				{
+					groupList.splice(groupList.indexOf(msgContainer), 1);
+				}
+			}
+		}
+		
+		private function clearEmoteContainer(emoteContainer:EmoteContainer):void
+		{
+			for each(var emote:EmoteContainer in emoteList)
+			{
+				if(emote == emoteContainer)
+				{
+					emoteList.splice(emoteList.indexOf(emoteContainer), 1);
+				}
+			}
+		}
 		/**
 		 *	显示图文混排 
 		 */
-		private function dispatchMsg(msg):void
+		private function dispatchMsg(msg:*):void
 		{
 			l('MSG:',msg);
 			
@@ -147,43 +201,24 @@
 			if(msg['nickname'])
 			{
 				//MessageBody
-				var msgContainer:Group = new Group();
+				msg.speed = testSpeed[int(Math.random()*testSpeed.length)];
+				msg.move = testMove[int(Math.random()*testMove.length)];
+				var msgContainer:MsgContainer = new MsgContainer(clearMsgContainer);
 				msgContainer.visible = false;
-				if(groupList == null)
-					groupList = new Vector.<Group>();
-				groupList.push(msgContainer);
+				msgContainer.addMsg(msg, screen, arrName, arrId, xmlLength)
 				//Position & Animation 
 				msgContainer.addEventListener(ResizeEvent.RESIZE,msgShow2Stage);
 				
-				//HeadImg
-				if(msg['headimg'])
-				{
-					var headImg:UIAsset = new UIAsset();
-					headImg.width = headImg.height = 28;
-					headImg.skinName = msg['headimg'];
-					msgContainer.addElement(headImg);
-				}else
-				{
-					//Nickname
-					var namenick:Label = new Label();
-					namenick.text = msg['nickname'] + ":";
-					namenick.size = msg['style'] && msg['style']['fontsize'] ? defaultStyle['fontsize'][msg['style']['fontsize']] : defaultStyle['fontsize']['small'];
-					namenick.textColor = parseInt(msg['style'] && msg['style']['color'] ? msg['style']['color'] : defaultStyle['color'],16);
-					namenick.fontFamily = msg['style'] && msg['style']['fontfamily'] ? msg['style']['fontfamily'] : defaultStyle['fontfamily'];
-					msgContainer.addElement(namenick);
-				}
+				if(groupList == null)
+					groupList = new Vector.<MsgContainer>();
+				groupList.push(msgContainer);
 				
-				//Compontent's Layout
-				var msglayout:HorizontalLayout = new HorizontalLayout();
-				msglayout.verticalAlign = 'middle';
-				msglayout.gap = 0;
-				msgContainer.layout = msglayout;
+				var emoteContainer:EmoteContainer = new EmoteContainer(clearEmoteContainer);
+				emoteContainer.addMsg(msg, this, arrName, arrId, xmlLength);
 				
-				parseMark(msgContainer,msg);
-				parseEmoteMark(msg);
-				
-				//AddToStage
-				screen.addElement(msgContainer);
+				if(emoteList == null)
+					emoteList = new Vector.<EmoteContainer>();
+				emoteList.push(emoteContainer);
 			}else
 			{
 				l('Nickname is missing!');	
@@ -204,94 +239,31 @@
 			
 			msgContainer.removeEventListener(ResizeEvent.RESIZE,msgShow2Stage);
 			
-			TweenLite.fromTo(msgContainer,25,
-			{
-				x : msgContainer.parent.width,
-				y : msgContainer.height * Math.floor(Math.random() * Math.floor(screen.height / msgContainer.height)),
-				ease : Linear.easeNone,
-				onStartParams:[msgContainer],
-				onStart : function(msgC:Group):void
-				{
-					msgC.visible = true;
-				}
-			},
-			{
-				x : - msgContainer.width,
-				ease : Linear.easeNone,
-				onCompleteParams : [msgContainer,msgContainer.parent],
-				onComplete:function(msgC:Group,msgParent:Group):void
-				{
-					msgParent.removeElement(msgC);
-				}
-			});
-		}
-		//解析图片和文本的函数
-		protected function parseMark(container:Group,msg:Object,ts:String=''):String
-		{
-			//空的字符串和接收到的消息
-			var s:String = ts || msg.cnt;//图文混排
+//			var msg:Object = getMsgByGroup(msgContainer);
 			
-			//字符串有内容才能解析
-			if (s.length > 0)
-			{
-				var leftbBracket:int = s.indexOf("[");
-				var rightBracket:int = s.indexOf("]");
-				
-				
-				if (leftbBracket >= 0 && rightBracket >=0)
-				{
-					
-					var leftText:String = s.substring(0,leftbBracket);
-					var mark:String = s.substring(leftbBracket, rightBracket + 1);
-					var remain:String = s.substring(rightBracket+1);
-					parseMessage(container,msg,leftText,mark, '');
-					
-					return parseMark(container,msg,remain);
-				}
-				else
-				{
-					parseMessage(container,msg,msg.cnt,'[微笑]', '');
-					
-					return "";
-				}
-			}else
-			{
-				return "";
-			}
+//			TweenLite.fromTo(msgContainer,msg.speed ? (msgContainer.parent.width+msgContainer.width-msgContainer.x)/msg.speed : defaultStyle.speed,
+//			{
+//				x : msgContainer.parent.width,
+//				y : msgContainer.height * Math.floor(Math.random() * Math.floor(screen.height / msgContainer.height)),
+//				ease : Linear.easeNone,
+//				onStartParams:[msgContainer],
+//				onStart : function(msgC:Group):void
+//				{
+//					msgC.visible = true;
+//				}
+//			},
+//			{
+//				x : - msgContainer.width,
+//				ease : Linear.easeNone,
+//				onCompleteParams : [msgContainer,msgContainer.parent],
+//				onComplete:function(msgC:Group,msgParent:Group):void
+//				{
+//					if(msgParent.getElementIndex(msgC) > -1)
+//						msgParent.removeElement(msgC);
+//				}
+//			});
 		}
 		
-		/**
-		 *	解析魔法表情函数 
-		 */
-		protected function parseEmoteMark(msg:Object,ts:String=''):String
-		{
-			//空的字符串和接收到的消息
-			var s:String = ts || msg.cnt;//图文混排
-			
-			//字符串有内容才能解析
-			if (s.length > 0)
-			{
-				var lefte:int = s.indexOf("{");
-				var righte:int = s.indexOf("}");
-				if(lefte >= 0 && righte >= 0)
-				{
-					var mark:String = s.substring(lefte, righte + 1);
-					var remain:String = s.substring(righte+1);
-					parseMessage(null,msg,'','', mark);
-					
-					return parseEmoteMark(msg, remain);
-				}
-				else
-				{
-					parseMessage(null, msg ,'', '', '{献花献花}');
-					return "";
-				}
-			}
-			else
-			{
-				return "";
-			}
-		}
 		
 		protected function addStageHandler(event:Event):void
 		{  
@@ -309,118 +281,6 @@
 			}
 			
 			loadXml();
-		}
-		
-		private var markUrl:String="http://58.215.50.188/micromessager/imgs/";
-		private var markEmoteUrl:String = "http://58.215.50.188/micromessager/swf"
-		private function parseMessage(container:Group, msg:Object, text:String, mark:String, emote:String):void
-		{
-			if(text)
-			{
-				//消息对象
-				var msgSprite:Label = new Label();
-				
-				//消息内容
-				msgSprite.text = text;
-				
-				//消息样式
-				msgSprite.size = msg['style'] && msg['style']['fontsize'] ? defaultStyle['fontsize'][msg['style']['fontsize']] : defaultStyle['fontsize']['small'];
-				msgSprite.textColor = parseInt(msg['style'] && msg['style']['color'] ? msg['style']['color'] : defaultStyle['color'],16);
-				msgSprite.fontFamily = msg['style'] && msg['style']['fontfamily'] ? msg['style']['fontfamily'] : defaultStyle['fontfamily'];
-				
-				container && container.addElement(msgSprite);
-			}
-			
-			if(mark)
-			{
-				//暂时代替url
-				//mark --> url
-				var imgExpress:UIAsset = new UIAsset();
-				imgExpress.width = imgExpress.height = 28;
-				
-				for(var i:int=0;i<xmlLength;i++)
-				{
-					if(String(mark)==String(arrName[i]))
-					{
-						//imgExpress.skinName = "assest/2.png";
-						
-						//服务器
-						imgExpress.skinName = this.markUrl +"/"+arrId[i]+".gif";
-						
-						//测试
-//						imgExpress.skinName = "assest/hard/"+arrId[i]
-//						trace(imgExpress.skinName);
-					}
-					
-				}
-				
-				container && container.addElement(imgExpress);
-			}
-			
-			if(emote)
-			{
-				for(var j:int=0;j<xmlLength;j++)
-				{
-					if(String(emote) == String(arrName[j]))
-					{
-						var url:String = this.markEmoteUrl+"/"+arrId[j]+".swf";
-						var swfEmote:UIAsset = new UIAsset();
-						swfEmote.skinName = url;
-						this.addElement(swfEmote);
-						swfEmote.addEventListener(UIEvent.SKIN_CHANGED,  skinChanged);
-					}
-				}
-			}
-		}
-		
-		private var IsAdd:Boolean = false;//是否注册帧事件
-		/**
-		 *		资源加载完成事件 
-		 */
-		private function skinChanged(e:UIEvent):void
-		{
-			var swfEmote:UIAsset = e.target as UIAsset;
-			
-			if(emoteList == null)
-				emoteList = new Vector.<UIAsset>();
-			
-			emoteList.push(swfEmote);
-			
-			if(!IsAdd)
-			{
-				IsAdd = true;
-				this.addEventListener(Event.ENTER_FRAME, enterFrame);
-			}
-		}
-		
-		/**
-		 *	播放完了进行删除 
-		 */
-		private function enterFrame(e:Event):void
-		{
-			for each(var emote:UIAsset in emoteList)
-			{
-				var swfEmote:MovieClip = emote.skin as MovieClip;
-				if(this.width < swfEmote.width)
-					swfEmote.x = 0;
-				else
-					swfEmote.x = (this.width-swfEmote.width)/2;
-				
-				if(this.height < swfEmote.height)
-					swfEmote.y = 0;
-				else
-					swfEmote.y = (this.height-swfEmote.height)/2;
-				
-				if(swfEmote.currentFrame == swfEmote.totalFrames)
-				{
-					swfEmote.stop();
-					this.removeElement(emote);
-					emoteList.splice(emoteList.indexOf(emote), 1);
-				}
-			}
-			
-			if(emoteList && emoteList.length == 0)
-				this.removeEventListener(Event.ENTER_FRAME, enterFrame);
 		}
 		
 		private function loadXml():void
