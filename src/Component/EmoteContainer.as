@@ -5,7 +5,6 @@ package Component
 	
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.UIAsset;
-	import org.flexlite.domUI.core.UIComponent;
 	import org.flexlite.domUI.events.UIEvent;
 	
 	public class EmoteContainer extends Group
@@ -32,7 +31,7 @@ package Component
 		public function addMsg(msg:Object, parent:Group, arrName:Array, arrId:Array, xmlLength:int ):void
 		{
 			_msg = msg;
-			_parent = parent
+			_parent = parent;
 			_arrName = arrName;
 			_arrId = arrId;
 			_xmlLength = xmlLength;
@@ -73,24 +72,38 @@ package Component
 			}
 		}
 		
+		/**
+		 *		表情是否合法 
+		 */
+		private function emoteExit(emote:String):String
+		{
+			for(var i:int=0;i<_xmlLength;i++)
+			{
+				if(emote == String(_arrName[i]))
+				{
+					return _arrId[i];
+				}
+			}
+			
+			return "";
+		}
+		
 		private function parseMessage(emote:String):void
 		{
 			if(emote)
 			{
-				for(var j:int=0;j<_xmlLength;j++)
+				var id:String = emoteExit(emote);
+				if(id != "")
 				{
-					if(String(emote) == String(_arrName[j]))
-					{
-						var emoteUI:UIAsset = new UIAsset();
-						var url:String = this.markEmoteUrl+"/"+_arrId[j]+".swf";
-						emoteUI.skinName = url;
-						_parent.addElement(emoteUI);
-						emoteUI.addEventListener(UIEvent.SKIN_CHANGED,  skinChanged);
-						
-						if(emoteList == null)
-							emoteList = new Vector.<UIAsset>();
-						emoteList.push(emoteUI);
-					}
+					var emoteUI:UIAsset = new UIAsset();
+					var url:String = this.markEmoteUrl+"/"+id+".swf";
+					emoteUI.skinName = url;
+					_parent.addElement(emoteUI);
+					emoteUI.addEventListener(UIEvent.SKIN_CHANGED,  skinChanged);
+					
+					if(emoteList == null)
+						emoteList = new Vector.<UIAsset>();
+					emoteList.push(emoteUI);
 				}
 			}
 		}
@@ -102,7 +115,11 @@ package Component
 		private function skinChanged(e:UIEvent):void
 		{
 			var swfEmote:UIAsset = e.target as UIAsset;
-			start();
+			if(!IsAdd)
+			{
+				IsAdd = true;
+				start();
+			}
 		}
 		
 		private function start():void
@@ -143,18 +160,28 @@ package Component
 			
 			if(emoteList && emoteList.length == 0)
 			{
+				if(_callBack != null)
+					_callBack(this);
 				stop();
+				
+				emoteList.length = 0;
 			}
 		}
 		
 		public function destory():void
 		{
-			for each(var emoteUI:UIAsset in emoteList)
+			if(emoteList != null)
 			{
-				var swfEmote:MovieClip = emoteUI.skin as MovieClip;
-				swfEmote && swfEmote.stop();
+				for each(var emoteUI:UIAsset in emoteList)
+				{
+					var swfEmote:MovieClip = emoteUI.skin as MovieClip;
+					swfEmote && swfEmote.stop();
+					
+					if(_parent.getElementIndex(emoteUI) > -1)
+						_parent.removeElement(emoteUI);
+				}
 				
-				emoteUI.parent && Group(emoteUI.parent).removeElement(emoteUI);
+				emoteList.length = 0;
 			}
 			
 			stop();

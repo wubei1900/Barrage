@@ -1,6 +1,5 @@
 ﻿package
 {
-	import com.greensock.TweenLite;
 	import com.greensock.easing.Linear;
 	
 	import flash.events.Event;
@@ -8,6 +7,7 @@
 	import flash.filters.GlowFilter;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.system.System;
 	import flash.utils.clearInterval;
 	import flash.utils.setInterval;
 	
@@ -20,8 +20,8 @@
 	import org.flexlite.domUI.components.Alert;
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.Group;
+	import org.flexlite.domUI.components.Label;
 	import org.flexlite.domUI.core.Theme;
-	import org.flexlite.domUI.effects.Resize;
 	import org.flexlite.domUI.events.ResizeEvent;
 	import org.flexlite.domUI.events.UIEvent;
 	import org.flexlite.domUI.managers.SystemManager;
@@ -40,7 +40,7 @@
 		private var groupList:Vector.<MsgContainer>;//图文混排列表
 		private var emoteList:Vector.<EmoteContainer>;//魔法表情容器列表
 	
-		private var testSpeed:Array = [1, 2, 3];
+		private var testSpeed:Array = [2, 3, 4];
 		private var testMove:Array = [1, 2, 3];
 		public function Barrage()
 		{
@@ -54,8 +54,30 @@
 			//测试开关按钮
 			testOpenAndClose();
 			
+			this.addEventListener(Event.ENTER_FRAME, priftHandler);
 			//配置图标库URl
 			//this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
+		}
+		
+		private var priftTxt:Label;
+		private function priftHandler(e:Event):void
+		{
+			if(priftTxt == null)
+			 	priftTxt = new Label();
+			priftTxt.textColor = 0xffffff;
+			this.addElement(priftTxt);
+			
+			var onScreen:int = 0
+			if(groupList != null)
+			{
+				for each(var msg:MsgContainer in groupList)
+				{
+					if(msg.IsMove)
+						onScreen++;
+				}
+			}
+			priftTxt.text = "Memory:"+System.freeMemory+"		CPU"+System.processCPUUsage+"			MSGNUM"+(groupList ? groupList.length : 0)+
+			"		EMOTENUM"+(emoteList ? emoteList.length : 0)+"			repeatCount"+repeatCount+"		newCount"+newCount+"		onScreen"+onScreen;
 		}
 		
 		private var workTime:uint;
@@ -132,9 +154,30 @@
 				}
 			});*/
 			
-			dispatchMsg({"tm":"1417169321307","nickname":"游客","id":24,"headimg":"","style":{"color":"59bb51","fontsize":"large","animation":"waves","flyspeed":"general"},"gid":null,"cid":"Test1","cnt":"来咯"});
+			var nicknames:Array = ["游客","过客","王强","李刚"];
+			var cnts:Array = ["来咯","路过","顶一个","节目真给力","北京欢迎你!!!","都是美女啊"];
+			var colors:Array = [0x000000, 0xff8a2c, 0x0ca713, 0x1647d3, 0x9b0bed];
+			var sizes:Array = ["small", "medium", "large", "llarge"];
+			dispatchMsg({"tm":"1417169321307","nickname":nicknames[int(Math.random()*nicknames.length)],"id":24,"headimg":"","style":{"color":colors[int(Math.random()*colors.length)],
+				"fontsize":sizes[int(Math.random()*sizes.length)],"animation":"waves","flyspeed":"general"},"gid":null,"cid":"Test1","cnt":cnts[int(Math.random()*cnts.length)]});
 		}
 		
+		private var repeatCount:int=0;
+		private var newCount:int=0;
+		private function getMsgContainer():MsgContainer
+		{
+			for each(var msg:MsgContainer in groupList)
+			{
+				if(!msg.IsMove)
+				{
+					repeatCount++;
+					return msg;
+				}
+			}
+			
+			newCount++;
+			return new MsgContainer();
+		}
 		/**
 		 *	是否显示表情 
 		 */
@@ -171,24 +214,16 @@
 		
 		private function clearMsgContainer(msgContainer:MsgContainer):void
 		{
-			for each(var msg:MsgContainer in groupList)
-			{
-				if(msg == msgContainer)
-				{
-					groupList.splice(groupList.indexOf(msgContainer), 1);
-				}
-			}
+				var index:int = groupList.indexOf(msgContainer);
+				if(index > -1)
+					groupList.splice(index, 1);
 		}
 		
 		private function clearEmoteContainer(emoteContainer:EmoteContainer):void
 		{
-			for each(var emote:EmoteContainer in emoteList)
-			{
-				if(emote == emoteContainer)
-				{
-					emoteList.splice(emoteList.indexOf(emoteContainer), 1);
-				}
-			}
+			var index:int = emoteList.indexOf(emoteContainer);
+			if(index > -1)
+				emoteList.splice(index, 1);
 		}
 		/**
 		 *	显示图文混排 
@@ -203,15 +238,17 @@
 				//MessageBody
 				msg.speed = testSpeed[int(Math.random()*testSpeed.length)];
 				msg.move = testMove[int(Math.random()*testMove.length)];
-				var msgContainer:MsgContainer = new MsgContainer(clearMsgContainer);
+				var msgContainer:MsgContainer = getMsgContainer();
 				msgContainer.visible = false;
 				msgContainer.addMsg(msg, screen, arrName, arrId, xmlLength)
 				//Position & Animation 
-				msgContainer.addEventListener(ResizeEvent.RESIZE,msgShow2Stage);
+//				msgContainer.addEventListener(ResizeEvent.RESIZE,msgShow2Stage);
 				
 				if(groupList == null)
 					groupList = new Vector.<MsgContainer>();
-				groupList.push(msgContainer);
+				
+				if(groupList.indexOf(msgContainer) < 0)
+					groupList.push(msgContainer);
 				
 				var emoteContainer:EmoteContainer = new EmoteContainer(clearEmoteContainer);
 				emoteContainer.addMsg(msg, this, arrName, arrId, xmlLength);
@@ -301,6 +338,8 @@
 				arrName.push(xml.SubTexture[i].@name);
 				arrId.push(xml.SubTexture[i].@id);
 			}
+			
+			trace(xml.attribute("[回头]"));
 		}
 		
 		private var screen:Group;
