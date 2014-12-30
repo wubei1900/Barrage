@@ -1,17 +1,14 @@
 ﻿package
 {
-	import com.greensock.easing.Linear;
-	
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.external.ExternalInterface;
-	import flash.filters.GlowFilter;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.system.System;
 	import flash.utils.clearInterval;
+	import flash.utils.getTimer;
 	import flash.utils.setInterval;
-	
-	import mx.events.FlexEvent;
 	
 	import Component.EmoteContainer;
 	import Component.MsgContainer;
@@ -27,7 +24,7 @@
 	import org.flexlite.domUI.managers.SystemManager;
 	import org.flexlite.domUI.skins.themes.VectorTheme;
 	
-	[SWF(backgroundColor="#000000")]
+	[SWF(backgroundColor="#000000", frameRate="24")]
 	public class Barrage extends SystemManager
 	{
 		private var ud:URLLoader;
@@ -40,23 +37,28 @@
 		private var groupList:Vector.<MsgContainer>;//图文混排列表
 		private var emoteList:Vector.<EmoteContainer>;//魔法表情容器列表
 	
-		private var testSpeed:Array = [2, 3, 4];
-		private var testMove:Array = [1, 2, 3];
+		private var testSpeed:Array = ['slow', 'general', 'fast', 'quickly'];
+		private var testMove:Array = ['normal', 'waves', 'flicker'];
+		
+		private var cacheMsgList:Array;
+		private var ONSCREENMAX:int = 500;
 		public function Barrage()
 		{
 			Injector.mapClass(Theme,VectorTheme);
 			
 			this.addEventListener(Event.ADDED_TO_STAGE,addStageHandler);
-			this.addEventListener(ResizeEvent.RESIZE, stageResize);
+			addStageHandler();
+//			this.addEventListener(ResizeEvent.RESIZE, stageResize);
 			//抛消息的，管多少
-			testWork = false;
+//			testWork = true;
 			
 			//测试开关按钮
-			testOpenAndClose();
+//			testOpenAndClose();
 			
-			this.addEventListener(Event.ENTER_FRAME, priftHandler);
+//			this.addEventListener(Event.ENTER_FRAME, priftHandler);
 			//配置图标库URl
 			//this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
+//			fscommand("allowscale", 'false');
 		}
 		
 		private var priftTxt:Label;
@@ -67,17 +69,8 @@
 			priftTxt.textColor = 0xffffff;
 			this.addElement(priftTxt);
 			
-			var onScreen:int = 0
-			if(groupList != null)
-			{
-				for each(var msg:MsgContainer in groupList)
-				{
-					if(msg.IsMove)
-						onScreen++;
-				}
-			}
 			priftTxt.text = "Memory:"+System.freeMemory+"		CPU"+System.processCPUUsage+"			MSGNUM"+(groupList ? groupList.length : 0)+
-			"		EMOTENUM"+(emoteList ? emoteList.length : 0)+"			repeatCount"+repeatCount+"		newCount"+newCount+"		onScreen"+onScreen;
+			"		EMOTENUM"+(emoteList ? emoteList.length : 0)+"			repeatCount"+repeatCount+"		newCount"+newCount+"		onScreen"+getOnScreenCount();
 		}
 		
 		private var workTime:uint;
@@ -123,7 +116,7 @@
 		
 		private function downHandler(e:UIEvent):void
 		{
-			if(e.target == left)
+			if(e.target.name == 'left')
 			{
 				Visible = true;
 				testWork = false;
@@ -155,11 +148,15 @@
 			});*/
 			
 			var nicknames:Array = ["游客","过客","王强","李刚"];
-			var cnts:Array = ["来咯","路过","顶一个","节目真给力","北京欢迎你!!!","都是美女啊"];
-			var colors:Array = [0x000000, 0xff8a2c, 0x0ca713, 0x1647d3, 0x9b0bed];
+			var cnts:Array = ["来咯","路过","顶一{感动流泪}个","节目真给力","北京欢迎你!!!","都是{献花献花}美女啊"];
+			var colors:Array = [0x000000, 0xff722c, 0x59bb51, 0x1787d5, 0xc33de0];
 			var sizes:Array = ["small", "medium", "large", "llarge"];
-			dispatchMsg({"tm":"1417169321307","nickname":nicknames[int(Math.random()*nicknames.length)],"id":24,"headimg":"","style":{"color":colors[int(Math.random()*colors.length)],
-				"fontsize":sizes[int(Math.random()*sizes.length)],"animation":"waves","flyspeed":"general"},"gid":null,"cid":"Test1","cnt":cnts[int(Math.random()*cnts.length)]});
+//			dispatchMsg({"tm":"1417169321307","nickname":nicknames[int(Math.random()*nicknames.length)],"id":24,"headimg":"","style":{"color":colors[int(Math.random()*colors.length)],
+//				"fontsize":sizes[int(Math.random()*sizes.length)],"animation":testMove[int(Math.random()*testMove.length)],"flyspeed":testSpeed[int(Math.random()*testSpeed.length)]},"gid":null,"cid":"Test1","cnt":cnts[int(Math.random()*cnts.length)]});
+//			dispatchMsg({nickname:'游客', gid:'CCTV1', id:4, style:{color:000000, flyspeed:'general', fontsize:'small', animation:'normal'}, heading:'', tm:'1419583882247',
+//			cid:'oHsekt2JyfIMp6bMR2R75sE68MqU', cnt:'[呲牙]'});
+			for(var i:int=0;i<15;i++)
+				dispatchMsg({"gid":"cctv2","style":{"fontsize":"small","flyspeed":"general","color":"00ff00","animation":"normal"},"cid":"test2","cnt":"[月亮]好好","headimg":"imgs/general/avatar-admin.png","code":"broadcast","tm":1419837465032,"nickname":"管理员"+i});
 		}
 		
 		private var repeatCount:int=0;
@@ -225,43 +222,172 @@
 			if(index > -1)
 				emoteList.splice(index, 1);
 		}
+		
+		private function enterFrame(e:Event):void
+		{
+			if(cacheMsgList.length > 0)
+				dispatchMsg(cacheMsgList.shift());
+			else
+				this.removeEventListener(Event.ENTER_FRAME, enterFrame);
+		}
+		
+		/**
+		 *	缓存处理(数据多不显示、卡)  
+		 */
+		private function cacheHandler(msg:*):void
+		{
+			if(cacheMsgList == null)
+				cacheMsgList = new Array();
+			cacheMsgList.push(msg);
+			this.addEventListener(Event.ENTER_FRAME, enterFrame);
+		}
 		/**
 		 *	显示图文混排 
 		 */
+		private var count:int=0;
+		private var lastTimer:int;
 		private function dispatchMsg(msg:*):void
 		{
-			l('MSG:',msg);
+			if(msg == null)return;
+			
+			if(getTimer() - lastTimer < 45 || getOnScreenCount() >= ONSCREENMAX)
+			{
+				cacheHandler(msg);
+				return;
+			}
+			
+			l('MSG:',msg+"条数:"+count++);
+			lastTimer = getTimer();
 			
 			//ParseMessage -- step1 -- nickname/imgheader
 			if(msg['nickname'])
 			{
-				//MessageBody
-				msg.speed = testSpeed[int(Math.random()*testSpeed.length)];
-				msg.move = testMove[int(Math.random()*testMove.length)];
-				var msgContainer:MsgContainer = getMsgContainer();
-				msgContainer.visible = false;
-				msgContainer.addMsg(msg, screen, arrName, arrId, xmlLength)
 				//Position & Animation 
 //				msgContainer.addEventListener(ResizeEvent.RESIZE,msgShow2Stage);
+				if(emoteExit(msg))
+				{
+					l('魔法表情已通过！！！');
+					var emoteContainer:EmoteContainer = new EmoteContainer();
+					emoteContainer.addMsg(msg, this, arrName, arrId, xmlLength)
+					
+					if(emoteList == null)
+						emoteList = new Vector.<EmoteContainer>();
+					emoteList.push(emoteContainer);
+				}
+				else
+				{
+					//MessageBody
+					var msgContainer:MsgContainer = getMsgContainer();
+					msgContainer.visible = false;
+					msgContainer.addMsg(msg, screen, arrName, arrId, xmlLength);
+					
+					if(groupList == null)
+						groupList = new Vector.<MsgContainer>();
+					
+					if(groupList.indexOf(msgContainer) < 0)
+						groupList.push(msgContainer);
+				}
 				
-				if(groupList == null)
-					groupList = new Vector.<MsgContainer>();
-				
-				if(groupList.indexOf(msgContainer) < 0)
-					groupList.push(msgContainer);
-				
-				var emoteContainer:EmoteContainer = new EmoteContainer(clearEmoteContainer);
-				emoteContainer.addMsg(msg, this, arrName, arrId, xmlLength);
-				
-				if(emoteList == null)
-					emoteList = new Vector.<EmoteContainer>();
-				emoteList.push(emoteContainer);
-			}else
+				if(getOnScreenCount() > 0 || getEmoteCount() > 0)
+				{
+					start();
+				}
+			}
+			else
 			{
 				l('Nickname is missing!');	
 			}
 		}
 		
+		private function start():void
+		{
+			this.addEventListener(Event.ENTER_FRAME, enterFrameHandler);
+		}
+		
+		private function stop():void
+		{
+			this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
+		}
+		
+		private function enterFrameHandler(e:Event):void
+		{
+			if(getOnScreenCount() <= 0 && getEmoteCount() <= 0)
+			{
+				stop();
+			}
+			
+			if(getOnScreenCount() > 0)
+			{
+				for each(var msg:MsgContainer in groupList)
+				{
+					if(msg.IsMove)
+						msg.enterFrame();
+				}
+			}
+			
+			if(getEmoteCount() > 0)
+			{
+				for each( var emote:EmoteContainer in emoteList)
+				{
+					if(emote.getOnSceneCount() > 0)
+						emote.enterFrame();
+					else
+						clearEmoteContainer(emote);
+				}
+			}
+		}
+		
+		private function emoteExit(msg:Object):Boolean
+		{
+			var s:String = msg.cnt;
+			var left:int = s.indexOf('{');
+			var right:int = s.indexOf('}');
+			var mark:String = s.substring(left, right+1);
+			
+			for(var i:int=0;i<xmlLength;i++)
+			{
+				if(mark == String(arrName[i]))
+				{
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		
+		/**
+		 *	当前屏显示数量(图文混排) 
+		 */
+		private function getOnScreenCount():int
+		{
+			var onScreen:int = 0;
+			if(groupList != null)
+			{
+				for each(var msg:MsgContainer in groupList)
+				{
+					if(msg.IsMove)
+						onScreen++;
+				}
+			}
+			
+			return onScreen;
+		}
+		
+		/**
+		 *	当前屏幕魔法表情 
+		 */
+		private function getEmoteCount():int
+		{
+			var onScreen:int=0;
+			if(emoteList != null)
+				for each(var emote:EmoteContainer in emoteList)
+				{
+					if(emote.getOnSceneCount() > 0)
+						onScreen++;
+				}
+			
+			return onScreen;
+		}
 		/**
 		 *	根据舞台摆位置 
 		 */
@@ -302,7 +428,7 @@
 		}
 		
 		
-		protected function addStageHandler(event:Event):void
+		protected function addStageHandler(event:Event=null):void
 		{  
 			//CallBack
 			if(ExternalInterface.available)
@@ -324,13 +450,24 @@
 		{
 			arrName=new Array();
 			arrId=new Array();
+			var url:String;
+			url = "http://58.215.50.188/suntv/public/swf/assest/smiles.xml";
+//			url = 'assest/smiles.xml';
 			ud=new URLLoader();
-			ud.load(new URLRequest("assest/smiles.xml"));
+			ud.load(new URLRequest("http://58.215.50.188/suntv/public/swf/assest/smiles.xml"));
 			ud.addEventListener(Event.COMPLETE,onCom);
+			ud.addEventListener(IOErrorEvent.IO_ERROR, error);
 		}
+		
+		protected function error(event:IOErrorEvent):void
+		{
+			l('加载失败XML'+'噢噢噢噢');
+		}
+		
 		protected function onCom(event:Event):void
 		{
 			xml=new XML(event.target.data);
+			l('加载完成XML'+xml);
 			xmlLength=int(xml.SubTexture.length());
 			strUrl=String(xml.SubTexture[0].@url);
 			for(var i:int=0;i<xmlLength;i++)
@@ -343,7 +480,6 @@
 		}
 		
 		private var screen:Group;
-		
 		override protected function createChildren():void
 		{
 			super.createChildren();

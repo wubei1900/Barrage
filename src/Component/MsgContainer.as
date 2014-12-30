@@ -1,13 +1,15 @@
 package Component
 {
+	import com.greensock.TweenLite;
+	
 	import flash.events.Event;
+	import flash.external.ExternalInterface;
 	
 	import filter.FilterLib;
 	
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.Label;
 	import org.flexlite.domUI.components.UIAsset;
-	import org.flexlite.domUI.effects.Resize;
 	import org.flexlite.domUI.events.ResizeEvent;
 	import org.flexlite.domUI.layouts.HorizontalLayout;
 	
@@ -19,14 +21,16 @@ package Component
 		private var msglayout:HorizontalLayout;//文本布局
 		
 		private var imgExpress:UIAsset;//表情图片
+		private var _parent:Group;
 		
 		private var _callBack:Function;
 		private var _msg:Object;
 		
-		private var _angle:Number = 0;
 		private var _alpha:Number = 0.1;
-		private var _size:int;
-		private var _font:String;
+		private var _size:int;//字体大小
+		private var _font:String;//字体
+		private var _animation:String;
+		private var _flyspeed:int;
 		private var _filters:Array=[FilterLib.glow_white];
 		private var _color:Number = 0x000000;
 		private var _compareColor:Number;
@@ -39,14 +43,15 @@ package Component
 		private var _IsMove:Boolean=false;
 		
 		/**移动类型**/
-		private const MOVE_TYPE_ONE:int				= 1;
-		private const MOVE_TYPE_SECOND:int			= 2;
-		private const MOVE_TYPE_THREE:int			= 3;
-		private const markUrl:String="http://58.215.50.188/micromessager/imgs/";
-		private const headUrl:String="http://58.215.50.188/micromessager/imgs/";
+		private const MOVE_TYPE_ONE:String				= 'normal';
+		private const MOVE_TYPE_SECOND:String		= 'waves';
+		private const MOVE_TYPE_THREE:String			= 'flicker';
+		private const markUrl:String="http://58.215.50.188/micromessager/imgs";
+		private const headUrl:String="http://58.215.50.188/micromessager/imgs";
+//		private const headUrl:String="assest";
 		
-		private var colors:Array = [0x000000, 0xff8a2c, 0x0ca713, 0x1647d3, 0x9b0bed];
-		private var compareColors:Array = [0xffffff, 0xff9933, 0x00cc33, 0x0099ff, 0x0033ff];
+		private var colors:Array = ['000000', 'ff722c', '59bb51', '1787d5', 'c33de0'];
+		private var compareColors:Array = ['ffffff', '0099FF', 'CC00CC', 'FFCC00', '009900'];
 		public function MsgContainer()
 		{
 //			_callBack = callBack;
@@ -67,13 +72,21 @@ package Component
 		
 		private var defaultStyle:Object = {
 			fontsize:{
-				small: 14,
-				medium: 24,
-				large:32,
-				llarge:42
+				small: 24,
+				medium: 32,
+				large:42,
+				llarge:50
 			},
-			fontfamily:'黑体',
-			color:'BBBBBB',
+			
+			flyspeed:{
+				slow:4,
+				general:6,
+				fast:8,
+				quickly:15
+			},
+			
+			fontfamily:'雅黑',
+			color:'000000',
 			speed:1
 		};
 		
@@ -85,13 +98,14 @@ package Component
 			IsMove = true;
 			
 			_msg = msg;
+			_parent = screen;
 			_arrName = arrName;
 			_arrId = arrId;
 			_xmlLength = xmlLength;
 			
 			if(headImg == null)
 				headImg = new UIAsset();
-			headImg.width = headImg.height = 28;
+			headImg.width = headImg.height = 32;
 			this.addElement(headImg);
 			//HeadImg
 			if(msg['headimg'])
@@ -100,7 +114,7 @@ package Component
 			}
 			else
 			{
-				headImg.skinName =this.headUrl +"/shy.gif" ;
+				headImg.skinName =this.headUrl +"/defaultHeadImg.jpg" ;
 			}
 				
 			//Nickname
@@ -109,11 +123,16 @@ package Component
 			namenick.text = msg['nickname'] + ":";
 			
 			_size = msg['style'] && msg['style']['fontsize'] ? defaultStyle['fontsize'][msg['style']['fontsize']] : defaultStyle['fontsize']['small'];
-			_color =  parseInt(msg['style'] && msg['style']['color'] ? msg['style']['color'] : defaultStyle['color'],16);
-			var indexColor:int = colors.indexOf(_color);
+			var colorString:String =  msg['style'] && msg['style']['color'] ? msg['style']['color'] : defaultStyle['color']//颜色字符串
+			_animation = msg['style'] && msg['style']['animation'] ? msg['style']['animation'] : 'normal';
+			_flyspeed = msg['style'] && msg['style']['flyspeed'] ? defaultStyle['flyspeed'][msg['style']['flyspeed']] : defaultStyle['flyspeed']['slow'];
+			
+			var indexColor:int = colors.indexOf(colorString);
 			if(indexColor < 0 || indexColor > 4)
 				indexColor = 0;
-			_compareColor = compareColors[indexColor];
+			
+			_color = parseInt(colorString, 16);
+			_compareColor = parseInt(compareColors[indexColor], 16);
 			
 			_font = msg['style'] && msg['style']['fontfamily'] ? msg['style']['fontfamily'] : defaultStyle['fontfamily'];
 			namenick.size = _size;
@@ -135,19 +154,25 @@ package Component
 			
 			
 			this.addEventListener(ResizeEvent.RESIZE, showStage);
+//			showStage();
+////			this.addEventListener(ElementExistenceEvent.ELEMENT_ADD, showStage);
+//			tweenLite = TweenLite.delayedCall(1, showStage);
 		}
 		
-		private function showStage(e:ResizeEvent):void
+		private var tweenLite:TweenLite;
+		private function showStage(e:Event=null):void
 		{
-			if( ! (this.width && this.height)) return;
+			if( ! (this.width && this.height && this.parent) ) return;
 			
+			tweenLite && tweenLite.kill();
 			this.removeEventListener(ResizeEvent.RESIZE, showStage);
+//			this.removeEventListener(ElementExistenceEvent.ELEMENT_ADD, showStage);
 			
 			this.x = this.parent.width;
 			this.y = this.height * Math.floor(Math.random() * Math.floor(this.parent.height / this.height));
 			
 			this.visible = true;
-			start();
+//			start();
 		}
 		//解析图片和文本的函数
 		protected function parseMark(ts:String=''):String
@@ -168,11 +193,14 @@ package Component
 					var remain:String = s.substring(rightBracket+1);
 					parseMessage(_msg, leftText, mark, '');
 					
-					return parseMark(remain);
+					if(remain != "")
+						return parseMark(remain);
+					else
+						return "";
 				}
 				else
 				{
-					parseMessage(_msg, _msg.cnt,'[微笑]', '');
+					parseMessage(_msg, s, '', '');
 					
 					return "";
 				}
@@ -232,7 +260,7 @@ package Component
 		
 		private function start():void
 		{
-			this.addEventListener(Event.ENTER_FRAME, enterFrame);
+			this.addEventListener(Event.ENTER_FRAME, enterFrame, false, 0, true);
 		}
 		
 		private function stop():void
@@ -243,26 +271,32 @@ package Component
 				_callBack(this);
 		}
 		
-		private function enterFrame(e:Event):void
+		private var _count:int;
+		private var _angle:Number = 0;
+		private const FLICKERSPEED:int = 5;
+		private const WAVESANGLE:int = 5;
+		public function enterFrame(e:Event=null):void
 		{
-			if(this.x == -this.width)
+			if(this.x <= -this.width)
 			{
 				IsMove = false;
 				destory();
-//				Group(this.parent).removeElement(this);
+				if(_parent && _parent.getElementIndex(this))
+					_parent.removeElement(this);
+				return;
 			}
 			
-			if(_msg.move == MOVE_TYPE_ONE)
+			this.x -= _flyspeed; 
+			
+			if(_animation == MOVE_TYPE_ONE)
 			{
-				this.x -=  _msg.speed ? _msg.speed : defaultStyle.speed;
 			}
-			else if(_msg.move == MOVE_TYPE_SECOND)
+			else if(_animation == MOVE_TYPE_SECOND)
 			{
 				_angle += 2;
-				this.x -=  (_msg.speed ? _msg.speed : defaultStyle.speed)*1;
-				this.y += Math.sin(_angle)*5; 
+				this.y += Math.sin(_angle)*WAVESANGLE; 
 			}
-			else if(_msg.move == MOVE_TYPE_THREE)
+			else if(_animation == MOVE_TYPE_THREE)
 			{
 //				if(alpha >= 1)
 //					IsAdd = false;
@@ -273,6 +307,11 @@ package Component
 //					_alpha += 0.1;
 //				else
 //					_alpha -= 0.1;
+				_count++;
+				if(_count <= FLICKERSPEED)
+					return;
+				
+				_count = 0;
 				
 				var color:Number=0xffffff;
 				if(IsAdd)
@@ -291,14 +330,25 @@ package Component
 				if(msgSprite)
 					msgSprite.textColor = color;
 				
-				this.x -= _msg.speed ? _msg.speed :defaultStyle.speed; 
 //				this.alpha = _alpha;
+			}
+		}
+		
+		private function l(...args):void
+		{
+			var logstr:String = JSON.stringify(args);
+			
+			trace('LOCAL LOG:-->',logstr);
+			
+			if(ExternalInterface.available)
+			{
+				ExternalInterface.call('console.log','Barrage--->',logstr);
 			}
 		}
 		
 		public function destory():void
 		{
-			stop();
+//			stop();
 			
 			if(headImg != null)
 			{

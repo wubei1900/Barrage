@@ -19,9 +19,9 @@ package Component
 		private var _callBack:Function;
 		private var _parent:Group;
 		private var emoteList:Vector.<UIAsset>;//魔法表情容器列表
-		public function EmoteContainer(callBack:Function)
+		public function EmoteContainer()
 		{
-			_callBack = callBack;
+//			_callBack = callBack;
 			super();
 		}
 		
@@ -58,11 +58,18 @@ package Component
 					var remain:String = s.substring(righte+1);
 					parseMessage(mark);
 					
-					return parseMark(remain);
+					if(remain != "")
+						return parseMark(remain);
+					else
+						return "";
 				}
 				else
 				{
-					parseMessage('{献花献花}');
+					//"{吓死我了}", 
+//					var emotes:Array = ["{感动流泪}", "{笑死我了}", "{献花献花}", "{扔鸡蛋}", "{困死了}"];
+//					parseMessage(emotes[int(Math.random()*emotes.length)]);
+//					var emotes:Array = ["{感动流泪}", "{笑死我了}", "{吓死我了}", "{献花献花}", "{扔鸡蛋}", "{困死了}"];
+//					parseMessage("{困死了}");
 					return "";
 				}
 			}
@@ -97,6 +104,7 @@ package Component
 				{
 					var emoteUI:UIAsset = new UIAsset();
 					var url:String = this.markEmoteUrl+"/"+id+".swf";
+//					var url:String = "assest/Tears_realise.swf";
 					emoteUI.skinName = url;
 					_parent.addElement(emoteUI);
 					emoteUI.addEventListener(UIEvent.SKIN_CHANGED,  skinChanged);
@@ -108,6 +116,13 @@ package Component
 			}
 		}
 		
+		public function getOnSceneCount():int
+		{
+			if(emoteList)
+				return emoteList.length;
+			
+			return 0;
+		}
 		private var IsAdd:Boolean = false;//是否注册帧事件
 		/**
 		 *		资源加载完成事件 
@@ -115,16 +130,36 @@ package Component
 		private function skinChanged(e:UIEvent):void
 		{
 			var swfEmote:UIAsset = e.target as UIAsset;
-			if(!IsAdd)
-			{
-				IsAdd = true;
-				start();
-			}
+			swfEmote.removeEventListener(UIEvent.SKIN_CHANGED, skinChanged);
+			
+			resetPosition(swfEmote);
+			
+//			if(!IsAdd)
+//			{
+//				IsAdd = true;
+//				start();
+//			}
+		}
+		
+		/**
+		 *		魔法表情坐标 
+		 */
+		private function resetPosition(swfEmote:UIAsset):void
+		{
+			if(_parent.width < swfEmote.width)
+				swfEmote.x = 100;
+			else
+				swfEmote.x = (_parent.width-swfEmote.width)/2+(int(Math.random()*(_parent.width-swfEmote.width))-(_parent.width-swfEmote.width)/2)-200;
+			
+			if(_parent.height < swfEmote.height)
+				swfEmote.y = 100;
+			else
+				swfEmote.y = (_parent.height-swfEmote.height)/2+(int(Math.random()*(_parent.height-swfEmote.height))-(_parent.height-swfEmote.height)/2)-200;
 		}
 		
 		private function start():void
 		{
-			this.addEventListener(Event.ENTER_FRAME, enterFrame);
+			this.addEventListener(Event.ENTER_FRAME, enterFrame, false, 0, true);
 		}
 		
 		private function stop():void
@@ -134,23 +169,16 @@ package Component
 		/**
 		 *	播放完了进行删除 
 		 */
-		private function enterFrame(e:Event):void
+		public function enterFrame(e:Event=null):void
 		{
+			if(emoteList == null)return;
+			
 			for each(var emote:UIAsset in emoteList)
 			{
 				var swfEmote:MovieClip = emote.skin as MovieClip;
 				if(swfEmote == null)continue;
-				if(_parent.width < swfEmote.width)
-					swfEmote.x = 0;
-				else
-					swfEmote.x = (_parent.width-swfEmote.width)/2;
 				
-				if(_parent.height < swfEmote.height)
-					swfEmote.y = 0;
-				else
-					swfEmote.y = (_parent.height-swfEmote.height)/2;
-				
-				if(swfEmote.currentFrame == swfEmote.totalFrames)
+				if(swfEmote.currentFrame >= swfEmote.totalFrames)
 				{
 					swfEmote.stop();
 					_parent.removeElement(emote);
@@ -160,9 +188,9 @@ package Component
 			
 			if(emoteList && emoteList.length == 0)
 			{
-				if(_callBack != null)
-					_callBack(this);
-				stop();
+//				if(_callBack != null)
+//					_callBack(this);
+//				stop();
 				
 				emoteList.length = 0;
 			}
@@ -184,7 +212,7 @@ package Component
 				emoteList.length = 0;
 			}
 			
-			stop();
+//			stop();
 		}
 	}
 }
