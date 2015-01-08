@@ -104,6 +104,7 @@ package Component
 				{
 					var emoteUI:UIAsset = new UIAsset();
 					var url:String = this.markEmoteUrl+"/"+id+".swf";
+					emoteUI.name = url;
 //					var url:String = "assest/Tears_realise.swf";
 					emoteUI.skinName = url;
 					_parent.addElement(emoteUI);
@@ -132,7 +133,7 @@ package Component
 			var swfEmote:UIAsset = e.target as UIAsset;
 			swfEmote.removeEventListener(UIEvent.SKIN_CHANGED, skinChanged);
 			
-			resetPosition(swfEmote);
+			resetPosition(swfEmote.skin as MovieClip);
 			
 //			if(!IsAdd)
 //			{
@@ -144,17 +145,18 @@ package Component
 		/**
 		 *		魔法表情坐标 
 		 */
-		private function resetPosition(swfEmote:UIAsset):void
+		private function resetPosition(swfEmote:MovieClip):void
 		{
+			trace('宽'+swfEmote.width+'高'+swfEmote.height);
 			if(_parent.width < swfEmote.width)
 				swfEmote.x = 100;
 			else
-				swfEmote.x = (_parent.width-swfEmote.width)/2+(int(Math.random()*(_parent.width-swfEmote.width))-(_parent.width-swfEmote.width)/2)-200;
+				swfEmote.x = (_parent.width-swfEmote.width)/2+int(Math.random()*(_parent.width-swfEmote.width)/2-(_parent.width-swfEmote.width)/4);
 			
 			if(_parent.height < swfEmote.height)
 				swfEmote.y = 100;
 			else
-				swfEmote.y = (_parent.height-swfEmote.height)/2+(int(Math.random()*(_parent.height-swfEmote.height))-(_parent.height-swfEmote.height)/2)-200;
+				swfEmote.y = (_parent.height-swfEmote.height)/2+int(Math.random()*(_parent.height-swfEmote.height)/2-(_parent.height-swfEmote.height)/4);
 		}
 		
 		private function start():void

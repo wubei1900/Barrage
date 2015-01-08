@@ -6,6 +6,7 @@
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.system.System;
+	import flash.text.Font;
 	import flash.utils.clearInterval;
 	import flash.utils.getTimer;
 	import flash.utils.setInterval;
@@ -25,6 +26,7 @@
 	import org.flexlite.domUI.skins.themes.VectorTheme;
 	
 	[SWF(backgroundColor="#000000", frameRate="24")]
+//	[Embed(source="C:/Windows/Fonts/MSYH.ttf", fontName="微软雅黑", mimeType="application/x-font-truetype")]
 	public class Barrage extends SystemManager
 	{
 		private var ud:URLLoader;
@@ -59,6 +61,25 @@
 			//配置图标库URl
 			//this.markUrl = this.loaderInfo.parameters['markUrl'] || this.markUrl;
 //			fscommand("allowscale", 'false');
+		}
+		
+		private function checkFontFamily(fontName:String):Boolean
+		{
+			var hasFont:Boolean = false;
+			var localFonts:Array = Font.enumerateFonts(true);
+			var f:Font;
+			var fName:String;
+			for(var i:int=0, len:int=localFonts.length; i<len; i++)
+			{
+				f = localFonts[i] as Font;
+				fName = f.fontName;
+				if(fName == fontName)
+				{
+					hasFont = true;
+					return hasFont;
+				}
+			}
+			return hasFont;
 		}
 		
 		private var priftTxt:Label;
@@ -148,15 +169,15 @@
 			});*/
 			
 			var nicknames:Array = ["游客","过客","王强","李刚"];
-			var cnts:Array = ["来咯","路过","顶一{感动流泪}个","节目真给力","北京欢迎你!!!","都是{献花献花}美女啊"];
-			var colors:Array = [0x000000, 0xff722c, 0x59bb51, 0x1787d5, 0xc33de0];
+			var cnts:Array = ["来咯","路过","顶一感动流泪个","节目真给力","北京欢迎你!!!","都是献花献花美女啊", '中国智造,惠及全球', '{感动流泪}', '{献花献花}','{感动流泪}','{笑死我了}','{吓死我了}','{扔鸡蛋}','{困死了}'];
+			var colors:Array = ['000000', 'ff722c', '59bb51', '1787d5', 'c33de0'];
 			var sizes:Array = ["small", "medium", "large", "llarge"];
-//			dispatchMsg({"tm":"1417169321307","nickname":nicknames[int(Math.random()*nicknames.length)],"id":24,"headimg":"","style":{"color":colors[int(Math.random()*colors.length)],
-//				"fontsize":sizes[int(Math.random()*sizes.length)],"animation":testMove[int(Math.random()*testMove.length)],"flyspeed":testSpeed[int(Math.random()*testSpeed.length)]},"gid":null,"cid":"Test1","cnt":cnts[int(Math.random()*cnts.length)]});
+			dispatchMsg({"tm":"1417169321307","nickname":nicknames[int(Math.random()*nicknames.length)],"id":24,"headimg":"","style":{"color":colors[int(Math.random()*colors.length)],
+				"fontsize":sizes[int(Math.random()*sizes.length)],"animation":testMove[int(Math.random()*testMove.length)],"flyspeed":testSpeed[int(Math.random()*testSpeed.length)]},"gid":null,"cid":"Test1","cnt":cnts[int(Math.random()*cnts.length)]});
 //			dispatchMsg({nickname:'游客', gid:'CCTV1', id:4, style:{color:000000, flyspeed:'general', fontsize:'small', animation:'normal'}, heading:'', tm:'1419583882247',
 //			cid:'oHsekt2JyfIMp6bMR2R75sE68MqU', cnt:'[呲牙]'});
-			for(var i:int=0;i<15;i++)
-				dispatchMsg({"gid":"cctv2","style":{"fontsize":"small","flyspeed":"general","color":"00ff00","animation":"normal"},"cid":"test2","cnt":"[月亮]好好","headimg":"imgs/general/avatar-admin.png","code":"broadcast","tm":1419837465032,"nickname":"管理员"+i});
+//			var cnts:Array = ['[月亮][月亮]','[再见][再见]','[坏笑][坏笑]']
+//			dispatchMsg({"gid":"cctv2","style":{"fontsize":"small","flyspeed":"slow","color":"00ff00","animation":"normal"},"cid":"test2","cnt":cnts[int(Math.random()*cnts.length)],"headimg":"imgs/general/avatar-admin.png","code":"broadcast","tm":1419837465032,"nickname":"管理员"});
 		}
 		
 		private var repeatCount:int=0;
@@ -450,11 +471,13 @@
 		{
 			arrName=new Array();
 			arrId=new Array();
-			var url:String;
-			url = "http://58.215.50.188/suntv/public/swf/assest/smiles.xml";
-//			url = 'assest/smiles.xml';
+			var url:String='';
+			/**线上**/
+//			url = "http://58.215.50.188/suntv/public/swf/assest/smiles.xml";
+			/**测试**/
+			url = 'assest/smiles.xml';
 			ud=new URLLoader();
-			ud.load(new URLRequest("http://58.215.50.188/suntv/public/swf/assest/smiles.xml"));
+			ud.load(new URLRequest(url));
 			ud.addEventListener(Event.COMPLETE,onCom);
 			ud.addEventListener(IOErrorEvent.IO_ERROR, error);
 		}
@@ -475,8 +498,6 @@
 				arrName.push(xml.SubTexture[i].@name);
 				arrId.push(xml.SubTexture[i].@id);
 			}
-			
-			trace(xml.attribute("[回头]"));
 		}
 		
 		private var screen:Group;

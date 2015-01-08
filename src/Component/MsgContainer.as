@@ -17,10 +17,10 @@ package Component
 	{
 		private var headImg:UIAsset;//头像
 		private var namenick:Label;//名字
-		private var msgSprite:Label;//文本内容
+		private var msgSprites:Vector.<Label>;//文本内容
 		private var msglayout:HorizontalLayout;//文本布局
 		
-		private var imgExpress:UIAsset;//表情图片
+		private var imgExpresss:Vector.<UIAsset>;//表情图片
 		private var _parent:Group;
 		
 		private var _callBack:Function;
@@ -28,6 +28,7 @@ package Component
 		
 		private var _alpha:Number = 0.1;
 		private var _size:int;//字体大小
+		private var _bold:Boolean=true;
 		private var _font:String;//字体
 		private var _animation:String;
 		private var _flyspeed:int;
@@ -58,6 +59,23 @@ package Component
 			super();
 		}
 		
+//		override protected function measure():void
+//		{
+//			if(!this.layout)return;
+//			super.measure();
+//			this.layout.measure();
+//		}
+//		
+//		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+//		{
+//			super.updateDisplayList(unscaledWidth, unscaledHeight);
+//			if(this.layout)
+//			{
+//				this.layout.updateDisplayList(unscaledWidth, unscaledHeight);
+//				this.layout.updateScrollRect(unscaledWidth, unscaledHeight);
+//			}
+//		}
+		
 		public function get IsMove():Boolean
 		{
 			return _IsMove;
@@ -65,8 +83,6 @@ package Component
 		
 		public function set IsMove(value:Boolean):void
 		{
-			if(!value)
-				trace(value);
 			_IsMove = value;
 		}
 		
@@ -85,7 +101,7 @@ package Component
 				quickly:15
 			},
 			
-			fontfamily:'雅黑',
+			fontfamily:'Microsoft YaHei',
 			color:'000000',
 			speed:1
 		};
@@ -135,6 +151,9 @@ package Component
 			_compareColor = parseInt(compareColors[indexColor], 16);
 			
 			_font = msg['style'] && msg['style']['fontfamily'] ? msg['style']['fontfamily'] : defaultStyle['fontfamily'];
+			if(_font != '黑体')
+				trace(_font);
+			namenick.bold = _bold;
 			namenick.size = _size;
 			namenick.textColor =_color;
 			namenick.fontFamily = _font;
@@ -148,25 +167,32 @@ package Component
 			msglayout.gap = 0;
 			this.layout = msglayout;
 			
+			if(imgExpresss)
+				imgExpresss.length = 0;
+			if(msgSprites)
+				msgSprites.length = 0;
 			parseMark();
 			
 			screen.addElement(this);
-			
-			
+			l('准备响应'+_msg.cnt+'Index:'+screen.getElementIndex(this)+'parent:'+this.parent+'数量'+this.numElements);
+			callCount++;
 			this.addEventListener(ResizeEvent.RESIZE, showStage);
-//			showStage();
-////			this.addEventListener(ElementExistenceEvent.ELEMENT_ADD, showStage);
-//			tweenLite = TweenLite.delayedCall(1, showStage);
+//			this.addEventListener(ElementExistenceEvent.ELEMENT_ADD, showStage);
+			this.addEventListener(Event.ENTER_FRAME, showStage);
 		}
 		
 		private var tweenLite:TweenLite;
+		private var callCount:int=0;
 		private function showStage(e:Event=null):void
 		{
+			l('响应次数'+this.width+this.height+this.parent+'CALLCOUNT'+callCount++);
+			if(callCount > 200)
+				this.removeEventListener(Event.ENTER_FRAME, showStage);
 			if( ! (this.width && this.height && this.parent) ) return;
-			
+			l('已响应'+_msg.cnt);
 			tweenLite && tweenLite.kill();
 			this.removeEventListener(ResizeEvent.RESIZE, showStage);
-//			this.removeEventListener(ElementExistenceEvent.ELEMENT_ADD, showStage);
+			this.removeEventListener(Event.ENTER_FRAME, showStage);
 			
 			this.x = this.parent.width;
 			this.y = this.height * Math.floor(Math.random() * Math.floor(this.parent.height / this.height));
@@ -215,14 +241,17 @@ package Component
 			if(text)
 			{
 				//消息对象
-				if(msgSprite == null)
-					msgSprite = new Label();
+				if(msgSprites == null)
+					msgSprites = new Vector.<Label>();
 				
+				var msgSprite:Label = new Label();
+				msgSprites.push(msgSprite);
 				//消息内容
 				msgSprite.text = text;
 				
 				//消息样式
 				msgSprite.size = _size;
+				msgSprite.bold = _bold;
 				msgSprite.textColor = _color;
 				msgSprite.fontFamily = _font;
 				msgSprite.filters = _filters;
@@ -234,8 +263,11 @@ package Component
 			{
 				//暂时代替url
 				//mark --> url
-				if(imgExpress == null)
-						imgExpress = new UIAsset();
+				if(imgExpresss == null)
+						imgExpresss = new Vector.<UIAsset>();
+				var imgExpress:UIAsset = new UIAsset();
+				imgExpresss.push(imgExpress);
+				
 				imgExpress.width = imgExpress.height = 28;
 				
 				for(var i:int=0;i<_xmlLength;i++)
@@ -260,7 +292,7 @@ package Component
 		
 		private function start():void
 		{
-			this.addEventListener(Event.ENTER_FRAME, enterFrame, false, 0, true);
+			this.addEventListener(Event.ENTER_FRAME, enterFrame);
 		}
 		
 		private function stop():void
@@ -277,6 +309,8 @@ package Component
 		private const WAVESANGLE:int = 5;
 		public function enterFrame(e:Event=null):void
 		{
+			if(this.visible == false)return;
+			
 			if(this.x <= -this.width)
 			{
 				IsMove = false;
@@ -327,7 +361,8 @@ package Component
 				
 				if(namenick)
 					namenick.textColor = color;
-				if(msgSprite)
+				
+				for each(var msgSprite:Label in msgSprites)
 					msgSprite.textColor = color;
 				
 //				this.alpha = _alpha;
@@ -366,24 +401,31 @@ package Component
 				namenick = null;
 			}
 			
-			if(msgSprite != null)
-			{
-				if(this.getElementIndex(msgSprite) > -1)
-					this.removeElement(msgSprite);
-				msgSprite = null;
-			}
-			
 			if(msglayout != null)
 			{
 				msglayout = null;
 			}
 			
-			if(imgExpress != null)
+			for each(var msgSprite:Label in msgSprites)
+			{
+					if(this.getElementIndex(msgSprite) > -1)
+						this.removeElement(msgSprite);
+					msgSprite = null;
+			}
+			
+			if(msgSprite)
+				msgSprites.length = 0;
+			
+			for each(var imgExpress:UIAsset in imgExpresss)
 			{
 				if(this.getElementIndex(imgExpress) > -1)
 					this.removeElement(imgExpress);
+				
 				imgExpress = null;
 			}
+			
+			if(imgExpress)
+				imgExpresss.length = 0;
 			
 			_angle = 0;
 			_alpha = 0.1;
