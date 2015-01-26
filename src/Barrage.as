@@ -199,7 +199,7 @@
 		/**
 		 *	是否显示表情 
 		 */
-		private function dispatchMsgControl(control):void
+		private function dispatchMsgControl(control:*):void
 		{
 			l('CONTROL:', control);
 			
@@ -473,9 +473,9 @@
 			arrId=new Array();
 			var url:String='';
 			/**线上**/
-//			url = "http://58.215.50.188/suntv/public/swf/assest/smiles.xml";
+			url = "http://58.215.50.188/micromessager/swf/assest/smiles.xml";
 			/**测试**/
-			url = 'assest/smiles.xml';
+//			url = 'assest/smiles.xml';
 			ud=new URLLoader();
 			ud.load(new URLRequest(url));
 			ud.addEventListener(Event.COMPLETE,onCom);
